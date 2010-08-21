@@ -88,7 +88,7 @@ NSInvocationOperation *theOperation = [[[NSInvocationOperation alloc] initWithTa
 {
 NSLog(@"POSTING MESSAGE");
 
-NSData *theSerializedMessage = [[CJSONDataSerializer serializer] serializeDictionary:inMessage];
+NSData *theSerializedMessage = [[CJSONDataSerializer serializer] serializeDictionary:inMessage error:NULL];
 
 NSManagedObject *theObject = [NSEntityDescription insertNewObjectForEntityForName:@"Message" inManagedObjectContext:self.coreDataManager.managedObjectContext];
 [theObject setValue:[NSDate date] forKey:@"created"];
@@ -122,7 +122,7 @@ NSDictionary *theMessage = [NSDictionary dictionaryWithObjectsAndKeys:
 	theMessagesArray, @"messages",
 	NULL];
 	
-NSData *theContent = [[CJSONDataSerializer serializer] serializeObject:theMessage];
+NSData *theContent = [[CJSONDataSerializer serializer] serializeObject:theMessage error:NULL];
 
 NSData *theKey = [@"sekret" dataUsingEncoding:NSUTF8StringEncoding];
 //NSURL *theURL = [NSURL URLWithString:@"http://localhost:8080/api/0/upload"];
