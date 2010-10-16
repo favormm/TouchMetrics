@@ -30,13 +30,12 @@
 #import "CAnalyticsManager.h"
 
 #import "CBetterCoreDataManager.h"
-#import "CJSONDataSerializer.h"
+#import "CJSONSerializer.h"
 #import "NSData_Extensions.h"
 #import "CURLOperation.h"
 #import "CTemporaryData.h"
 #import "CAnalyticsManager.h"
 #import "NSManagedObjectContext_Extensions.h"
-#import "CSerializedJSONData.h"
 #import "CAnalyticsCouchDBMessenger.h"
 
 static CAnalyticsManager *gInstance = NULL;
