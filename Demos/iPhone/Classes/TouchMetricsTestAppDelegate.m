@@ -57,6 +57,11 @@ imagePickerController = NULL;
 
 NSDictionary *theMessage = [NSDictionary dictionaryWithObjectsAndKeys:@"test", @"test", NULL];
 [[CAnalyticsManager sharedInstance] postMessage:theMessage];
+[[CAnalyticsManager sharedInstance] postMessage:theMessage];
+[[CAnalyticsManager sharedInstance] postMessage:theMessage];
+[[CAnalyticsManager sharedInstance] postMessage:theMessage];
+[[CAnalyticsManager sharedInstance] postMessage:theMessage];
+[[CAnalyticsManager sharedInstance] postMessage:theMessage];
 }
 
 @end
