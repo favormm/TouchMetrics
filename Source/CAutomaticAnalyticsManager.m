@@ -28,7 +28,8 @@ static IMP gOldViewWillDisappearImp = NULL;
 {
 NSAutoreleasePool *thePool = [[NSAutoreleasePool alloc] init];
 
-[self sharedInstance];
+    Swizzle([UIViewController class], @selector(viewDidAppear:), @selector(myViewDidAppear:), &gOldViewDidAppearImp);
+    Swizzle([UIViewController class], @selector(viewWillDisappear:), @selector(myViewWillDisappear:), &gOldViewWillDisappearImp);
 
 [thePool release];
 }
@@ -37,8 +38,6 @@ NSAutoreleasePool *thePool = [[NSAutoreleasePool alloc] init];
 {
 if ((self = [super init]) != NULL)
     {
-    Swizzle([UIViewController class], @selector(viewDidAppear:), @selector(myViewDidAppear:), &gOldViewDidAppearImp);
-    Swizzle([UIViewController class], @selector(viewWillDisappear:), @selector(myViewWillDisappear:), &gOldViewWillDisappearImp);
     }
 return(self);
 }

@@ -32,10 +32,15 @@
 @interface CAnalyticsManager : NSObject {
     NSOperationQueue *operationQueue;
     NSTimer *timer;
+    NSString *session;
 }
+
+@property (readwrite, nonatomic, retain) NSString *session;
 
 + (CAnalyticsManager *)sharedInstance;
 
 - (void)postMessage:(NSDictionary *)inMessage;
+
+- (void)synchronize;
 
 @end

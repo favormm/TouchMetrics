@@ -29,20 +29,19 @@
 
 #import "CAnalyticsManager.h"
 
-#import "CBetterCoreDataManager.h"
 #import "CJSONSerializer.h"
 #import "NSData_Extensions.h"
 #import "CURLOperation.h"
 #import "CTemporaryData.h"
 #import "CAnalyticsManager.h"
-#import "NSManagedObjectContext_Extensions.h"
 #import "CAnalyticsCouchDBMessenger.h"
+#import "COutgoingDataManager.h"
 
 static CAnalyticsManager *gInstance = NULL;
 
-@interface CAnalyticsManager () <CCoreDataManagerDelegate>
+@interface CAnalyticsManager ()
 @property (readwrite, nonatomic, retain) NSOperationQueue *operationQueue;
-@property (readwrite, nonatomic, retain) CCoreDataManager *coreDataManager;
+@property (readwrite, nonatomic, retain) COutgoingDataManager *outgoingDataManager;
 @property (readwrite, nonatomic, retain) CAnalyticsCouchDBMessenger *messenger;
 @property (readwrite, nonatomic, assign) NSTimer *timer;
 
@@ -54,116 +53,118 @@ static CAnalyticsManager *gInstance = NULL;
 @implementation CAnalyticsManager
 
 @synthesize operationQueue;
-@synthesize coreDataManager;
+@synthesize outgoingDataManager;
 @synthesize messenger;
 @synthesize timer;
+@synthesize session;
 
 + (CAnalyticsManager *)sharedInstance
-{
-if (gInstance == NULL)
-	{
-	gInstance = [[self alloc] init];
-	}
-return(gInstance);
-}
+    {
+    if (gInstance == NULL)
+        {
+        gInstance = [[self alloc] init];
+        }
+    return(gInstance);
+    }
 
 - (id)init
-{
-if ((self = [super init]) != NULL)
-	{
-    operationQueue = [[NSOperationQueue alloc] init];
+    {
+    if ((self = [super init]) != NULL)
+        {
+        operationQueue = [[NSOperationQueue alloc] init];
 
-	coreDataManager = [[CBetterCoreDataManager alloc] init];
-    coreDataManager.name = @"Analytics";
-	coreDataManager.delegate = self;
-    
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(managedObjectContextDidSaveNotification:) name:NSManagedObjectContextDidSaveNotification object:coreDataManager.managedObjectContext];
-	
-    messenger = [[CAnalyticsCouchDBMessenger alloc] initWithAnalyticsManager:self];
-    
-    timer = [NSTimer scheduledTimerWithTimeInterval:30.0 target:self selector:@selector(timerFire:) userInfo:NULL repeats:YES];
+        outgoingDataManager = [[COutgoingDataManager alloc] initWithName:@"analytics"];
+        
+        messenger = [[CAnalyticsCouchDBMessenger alloc] initWithAnalyticsManager:self];
+        
+        timer = [NSTimer scheduledTimerWithTimeInterval:30.0 target:self selector:@selector(timerFire:) userInfo:NULL repeats:YES];
+        
+        [self processMessages];
+        }
+    return(self);
     }
-return(self);
-}
 
 - (void)dealloc
-{
-[timer invalidate];
-timer = NULL;
+    {
+    [timer invalidate];
+    timer = NULL;
 
-[operationQueue waitUntilAllOperationsAreFinished];
-[operationQueue release];
-operationQueue = NULL;
+    [operationQueue waitUntilAllOperationsAreFinished];
+    [operationQueue release];
+    operationQueue = NULL;
 
-[coreDataManager release];
-coreDataManager = NULL;
+    [outgoingDataManager release];
+    outgoingDataManager = NULL;
 
-[messenger release];
-messenger = NULL;
-//
-[super dealloc];
-}
+    [messenger release];
+    messenger = NULL;
+    //
+    [super dealloc];
+    }
+
+#pragma mark -
+
+- (NSString *)session
+    {
+    if (session == NULL)
+        {
+        session = [[NSString alloc] initWithFormat:@"%f", [[NSDate date] timeIntervalSince1970]];
+        }
+    return(session);
+    }
+
+#pragma mark -
 
 - (void)postMessage:(NSDictionary *)inMessage
-{
-__block CAnalyticsManager *_self = self;
-NSBlockOperation *theOperation = [NSBlockOperation blockOperationWithBlock:^(void)
     {
-    NSManagedObject *theObject = [NSEntityDescription insertNewObjectForEntityForName:@"Message" inManagedObjectContext:_self.coreDataManager.managedObjectContext];
-    [theObject setValue:[NSDate date] forKey:@"created"];
-    [theObject setValue:inMessage forKey:@"message"];
-    [_self.coreDataManager save];
-    }];
-[self.operationQueue addOperation:theOperation];
-}
+    NSDictionary *theFullMessage = [NSDictionary dictionaryWithObjectsAndKeys:
+        [NSNumber numberWithDouble:[[NSDate date] timeIntervalSince1970]], @"timestamp",
+        self.session, @"session",
+        inMessage, @"message",
+        NULL];
+    
+    CJSONSerializer *theSerializer = [CJSONSerializer serializer];
+    NSError *theError = NULL;
+    NSMutableData *theData = [[[theSerializer serializeDictionary:theFullMessage error:&theError] mutableCopy] autorelease];
+    [theData appendBytes:",\n" length:2];
+    [self.outgoingDataManager writeData:theData];
+    }
+
+- (void)synchronize
+    {
+    }
 
 - (void)processMessages
-{
-__block CAnalyticsManager *_self = self;
-NSBlockOperation *theOperation = [NSBlockOperation blockOperationWithBlock:^(void) {
-    NSMutableArray *theMessagesArray = [NSMutableArray array];
-
-    NSError *theError = NULL;
-    NSArray *theMessages = [_self.coreDataManager.managedObjectContext fetchObjectsOfEntityForName:@"Message" predicate:NULL error:&theError];
-    for (NSManagedObject *theMessage in theMessages)
+    {
+    NSLog(@"Process Messages");
+    
+    NSData *theHeaderData = [@"[" dataUsingEncoding:NSUTF8StringEncoding];
+    NSData *theFooterData = [@"]" dataUsingEncoding:NSUTF8StringEncoding];
+    
+    id theBlock = ^(NSURL *inURL, BOOL *outStop)
         {
-        NSMutableDictionary *theMessageDictionary = [NSMutableDictionary dictionary];
-        [theMessageDictionary setObject:[theMessage valueForKey:@"message"] forKey:@"message"];
-        [theMessageDictionary setObject:[theMessage valueForKey:@"created"] forKey:@"created"];
-
-        [theMessagesArray addObject:theMessageDictionary];
-
-        [_self.coreDataManager.managedObjectContext deleteObject:theMessage];
-        }
-
-    [_self.coreDataManager save];
-
-    NSDictionary *theMessage = [NSDictionary dictionaryWithObjectsAndKeys:
-        [[NSBundle mainBundle] bundleIdentifier], @"CFBundleIdentifier",
-        [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"], @"CFBundleVersion",
-        theMessagesArray, @"messages",
-        NULL];
+        NSError *theError = NULL;
         
-    [_self.messenger sendDocument:theMessage];
-    }];
-[self.operationQueue addOperation:theOperation];
-}
+        NSMutableData *theData = [NSMutableData data];
+        
+        [theData appendData:theHeaderData];
+        NSData *theMessageData = [NSData dataWithContentsOfURL:inURL options:NSDataReadingMapped error:&theError];
+        [theData appendData:theMessageData];
+        [theData appendData:theFooterData];
+        
+        [self.messenger sendBatchData:theData];
+        
+        return(YES);
+        };
+    
+    [self.outgoingDataManager processFilesUsingBlock:theBlock];
+    }
 
 #pragma mark -
 
 - (void)timerFire:(id)inParameter
-{
-NSError *theError = NULL;
-NSUInteger theCount = [self.coreDataManager.managedObjectContext countOfObjectsOfEntityForName:@"Message" predicate:NULL error:&theError];
-if (theCount > 10)
     {
     [self processMessages];
     }
-}
-
-- (void)managedObjectContextDidSaveNotification:(NSNotification *)notification
-{
-NSLog(@"DID SAVE");
-}
 
 @end

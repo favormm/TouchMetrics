@@ -25,5 +25,6 @@
 - (id)initWithAnalyticsManager:(CAnalyticsManager *)inAnalyticsManager;
 
 - (void)sendDocument:(NSDictionary *)inDocument;
+- (void)sendBatchData:(NSData *)inData;
 
 @end

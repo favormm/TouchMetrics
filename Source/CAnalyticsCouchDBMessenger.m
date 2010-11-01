@@ -15,6 +15,7 @@
 #import "CURLOperation.h"
 #import "CCouchDBSession.h"
 #import "CCodingCouchDBURLOperation.h"
+#import "CJSONSerializedData.h"
 
 @interface CAnalyticsCouchDBMessenger () <CPersistentOperationQueueDelegate>
 @property (readwrite, nonatomic, assign) CAnalyticsManager *analyticsManager;
@@ -49,7 +50,7 @@ if ((self = [super init]) != NULL)
     
     server = [[CCouchDBServer alloc] initWithSession:session URL:[NSURL URLWithString:@"http://localhost:5984/"]];
     
-    database = [[CCouchDBDatabase alloc] initWithServer:server name:@"touchanalytics"];
+    database = [[CCouchDBDatabase alloc] initWithServer:server name:@"touch-analytics"];
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationWillResignActive:) name:UIApplicationWillResignActiveNotification object:NULL];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationWillTerminate:) name:UIApplicationWillTerminateNotification object:NULL];
@@ -79,7 +80,17 @@ persistentRequestManager = NULL;
 
 - (void)sendDocument:(NSDictionary *)inDocument;
 {
-[self.database createDocument:inDocument successHandler:^(id inParameter) { NSLog(@"SUCCESS"); } failureHandler:^(NSError *inError) { NSLog(@"ERROR: %@", inError); }];
+[self.database createDocument:inDocument successHandler:^(id inParameter) { NSLog(@"SUCCESS: %@", inParameter); } failureHandler:^(NSError *inError) { NSLog(@"ERROR: %@", inError); }];
+}
+
+- (void)sendBatchData:(NSData *)inData;
+{
+CJSONSerializedData *theData = [[[CJSONSerializedData alloc] initWithData:inData] autorelease];
+
+
+NSOperation *theOperation = [self.database operationToBulkCreateDocuments:theData successHandler:^(id inParameter) { NSLog(@"POST SUCCESS: %@", inParameter); } failureHandler:^(NSError *inError) { NSLog(@"POST ERROR: %@", inError); }];
+[self.session.operationQueue addOperation:theOperation];
+
 }
 
 - (void)applicationWillResignActive:(NSNotification *)inNotification
