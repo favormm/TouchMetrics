@@ -29,13 +29,17 @@
 
 #import <Foundation/Foundation.h>
 
+@class CJSONSerializer;
+
 @interface CAnalyticsManager : NSObject {
     NSOperationQueue *operationQueue;
     NSTimer *timer;
-    NSString *session;
+    CJSONSerializer *serializer;
+    id session;
 }
 
-@property (readwrite, nonatomic, retain) NSString *session;
+@property (readwrite, nonatomic, retain) CJSONSerializer *serializer;
+@property (readwrite, nonatomic, retain) id session;
 
 + (CAnalyticsManager *)sharedInstance;
 

@@ -104,7 +104,16 @@ static CAnalyticsManager *gInstance = NULL;
 
 #pragma mark -
 
-- (NSString *)session
+- (CJSONSerializer *)serializer
+    {
+    if (serializer == NULL)
+        {
+        serializer = [[CJSONSerializer serializer] retain]; 
+        }
+    return(serializer);
+    }
+
+- (id)session
     {
     if (session == NULL)
         {
@@ -123,9 +132,8 @@ static CAnalyticsManager *gInstance = NULL;
         inMessage, @"message",
         NULL];
     
-    CJSONSerializer *theSerializer = [CJSONSerializer serializer];
     NSError *theError = NULL;
-    NSMutableData *theData = [[[theSerializer serializeDictionary:theFullMessage error:&theError] mutableCopy] autorelease];
+    NSMutableData *theData = [[[self.serializer serializeDictionary:theFullMessage error:&theError] mutableCopy] autorelease];
     [theData appendBytes:",\n" length:2];
     [self.outgoingDataManager writeData:theData];
     }

@@ -36,84 +36,81 @@
 @synthesize persistentRequestManager;
 
 - (id)initWithAnalyticsManager:(CAnalyticsManager *)inAnalyticsManager;
-{
-if ((self = [super init]) != NULL)
     {
-    analyticsManager = inAnalyticsManager;
-    
-    persistentRequestManager = [[CPersistentOperationQueue alloc] init];
-    persistentRequestManager.delegate = self;
+    if ((self = [super init]) != NULL)
+        {
+        analyticsManager = inAnalyticsManager;
+        
+        persistentRequestManager = [[CPersistentOperationQueue alloc] init];
+        persistentRequestManager.delegate = self;
 
-    session = [[CCouchDBSession alloc] init];
-    session.operationQueue = persistentRequestManager;
-    session.URLOperationClass = [CCodingCouchDBURLOperation class];
-    
-    server = [[CCouchDBServer alloc] initWithSession:session URL:[NSURL URLWithString:@"http://localhost:5984/"]];
-    
-    database = [[CCouchDBDatabase alloc] initWithServer:server name:@"touch-analytics"];
-    
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationWillResignActive:) name:UIApplicationWillResignActiveNotification object:NULL];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationWillTerminate:) name:UIApplicationWillTerminateNotification object:NULL];
+        session = [[CCouchDBSession alloc] init];
+        session.operationQueue = persistentRequestManager;
+        session.URLOperationClass = [CCodingCouchDBURLOperation class];
+        
+        server = [[CCouchDBServer alloc] initWithSession:session URL:[NSURL URLWithString:@"http://localhost:5984/"]];
+        
+        database = [[CCouchDBDatabase alloc] initWithServer:server name:@"touch-analytics"];
+        
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationWillResignActive:) name:UIApplicationWillResignActiveNotification object:NULL];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationWillTerminate:) name:UIApplicationWillTerminateNotification object:NULL];
+        }
+    return(self);
     }
-return(self);
-}
 
 - (void)dealloc
-{
-analyticsManager = NULL;
-[session release];
-session = NULL;
-[server release];
-server = NULL;
-[database release];
-database = NULL;
-[persistentRequestManager release];
-persistentRequestManager = NULL;
-//
-[super dealloc];
-}
+    {
+    analyticsManager = NULL;
+    [session release];
+    session = NULL;
+    [server release];
+    server = NULL;
+    [database release];
+    database = NULL;
+    [persistentRequestManager release];
+    persistentRequestManager = NULL;
+    //
+    [super dealloc];
+    }
 
 - (void)invalidate
-{
-[self.persistentRequestManager hibernate];
-}
+    {
+    [self.persistentRequestManager hibernate];
+    }
 
 - (void)sendDocument:(NSDictionary *)inDocument;
-{
-[self.database createDocument:inDocument successHandler:^(id inParameter) { NSLog(@"SUCCESS: %@", inParameter); } failureHandler:^(NSError *inError) { NSLog(@"ERROR: %@", inError); }];
-}
+    {
+    [self.database createDocument:inDocument successHandler:^(id inParameter) { NSLog(@"SUCCESS: %@", inParameter); } failureHandler:^(NSError *inError) { NSLog(@"ERROR: %@", inError); }];
+    }
 
 - (void)sendBatchData:(NSData *)inData;
-{
-CJSONSerializedData *theData = [[[CJSONSerializedData alloc] initWithData:inData] autorelease];
+    {
+    CJSONSerializedData *theData = [[[CJSONSerializedData alloc] initWithData:inData] autorelease];
 
-
-NSOperation *theOperation = [self.database operationToBulkCreateDocuments:theData successHandler:^(id inParameter) { NSLog(@"POST SUCCESS: %@", inParameter); } failureHandler:^(NSError *inError) { NSLog(@"POST ERROR: %@", inError); }];
-[self.session.operationQueue addOperation:theOperation];
-
-}
+    NSOperation *theOperation = [self.database operationToBulkCreateDocuments:theData successHandler:^(id inParameter) { NSLog(@"POST SUCCESS: %@", inParameter); } failureHandler:^(NSError *inError) { NSLog(@"POST ERROR: %@", inError); }];
+    [self.session.operationQueue addOperation:theOperation];
+    }
 
 - (void)applicationWillResignActive:(NSNotification *)inNotification
-{
-[self invalidate];
-}
+    {
+    [self invalidate];
+    }
 
 - (void)applicationWillTerminate:(NSNotification *)inNotification
-{
-[self invalidate];
-}
+    {
+    [self invalidate];
+    }
 
 #pragma mark -
 
 - (void)persistentOperationQueue:(CPersistentOperationQueue *)inPersistentOperationQueue didUnhibernateOperation:(NSOperation *)inOperation;
-{
-if ([inOperation isKindOfClass:[CCodingCouchDBURLOperation class]])
     {
-    CCodingCouchDBURLOperation *theOperation = (CCodingCouchDBURLOperation *)inOperation;
-    theOperation.successHandler = ^(id inParameter) { NSLog(@"SUCCESS"); };
-    theOperation.failureHandler = ^(NSError *inError) { NSLog(@"ERROR: %@", inError); };
+    if ([inOperation isKindOfClass:[CCodingCouchDBURLOperation class]])
+        {
+        CCodingCouchDBURLOperation *theOperation = (CCodingCouchDBURLOperation *)inOperation;
+        theOperation.successHandler = ^(id inParameter) { NSLog(@"SUCCESS"); };
+        theOperation.failureHandler = ^(NSError *inError) { NSLog(@"ERROR: %@", inError); };
+        }
     }
-
-}
 
 @end
