@@ -32,7 +32,7 @@
     if ((self = [super init]) != NULL)
         {
         name = [inName retain];
-        maximumDataLength = 256;
+        maximumDataLength = 256 * 1024;
         }
     return(self);
     }
@@ -67,7 +67,7 @@
             {
             NSError *theError = NULL;
             NSURL *theCachesURL = [[NSFileManager fileManager] URLForDirectory:NSCachesDirectory inDomain:NSUserDomainMask appropriateForURL:NULL create:YES error:&theError];
-            NSURL *theDirectoryURL = [theCachesURL URLByAppendingPathComponent:[NSString stringWithFormat:@"Outgoing_%@", self.name]];
+            NSURL *theDirectoryURL = [theCachesURL URLByAppendingPathComponent:self.name];
             if ([[NSFileManager fileManager] createDirectoryAtPath:theDirectoryURL.path withIntermediateDirectories:YES attributes:NULL error:&theError] == NO)
                 {
                 NSLog(@"Error: %@", theError);
