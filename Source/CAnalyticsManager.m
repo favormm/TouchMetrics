@@ -40,22 +40,14 @@
 static CAnalyticsManager *gInstance = NULL;
 
 @interface CAnalyticsManager ()
-@property (readwrite, nonatomic, retain) NSOperationQueue *operationQueue;
-@property (readwrite, nonatomic, retain) COutgoingDataManager *outgoingDataManager;
 @property (readwrite, nonatomic, retain) CAnalyticsCouchDBMessenger *messenger;
-@property (readwrite, nonatomic, assign) NSTimer *timer;
-
-- (void)processMessages;
 @end
 
 #pragma mark -
 
 @implementation CAnalyticsManager
 
-@synthesize operationQueue;
-@synthesize outgoingDataManager;
 @synthesize messenger;
-@synthesize timer;
 @synthesize session;
 
 + (CAnalyticsManager *)sharedInstance
@@ -71,31 +63,13 @@ static CAnalyticsManager *gInstance = NULL;
     {
     if ((self = [super init]) != NULL)
         {
-        operationQueue = [[NSOperationQueue alloc] init];
-
-        outgoingDataManager = [[COutgoingDataManager alloc] initWithName:@"analytics"];
-        
         messenger = [[CAnalyticsCouchDBMessenger alloc] initWithAnalyticsManager:self];
-        
-        timer = [NSTimer scheduledTimerWithTimeInterval:30.0 target:self selector:@selector(timerFire:) userInfo:NULL repeats:YES];
-        
-        [self processMessages];
         }
     return(self);
     }
 
 - (void)dealloc
     {
-    [timer invalidate];
-    timer = NULL;
-
-    [operationQueue waitUntilAllOperationsAreFinished];
-    [operationQueue release];
-    operationQueue = NULL;
-
-    [outgoingDataManager release];
-    outgoingDataManager = NULL;
-
     [messenger release];
     messenger = NULL;
     //
@@ -104,75 +78,59 @@ static CAnalyticsManager *gInstance = NULL;
 
 #pragma mark -
 
-- (CJSONSerializer *)serializer
-    {
-    if (serializer == NULL)
-        {
-        serializer = [[CJSONSerializer serializer] retain]; 
-        }
-    return(serializer);
-    }
-
 - (id)session
     {
     if (session == NULL)
         {
-        session = [[NSString alloc] initWithFormat:@"%f", [[NSDate date] timeIntervalSince1970]];
+        session = [[NSDate date] retain];
         }
     return(session);
     }
 
 #pragma mark -
 
-- (void)postMessage:(NSDictionary *)inMessage
+- (void)postEvent:(NSDictionary *)inEvent
     {
-    NSDictionary *theFullMessage = [NSDictionary dictionaryWithObjectsAndKeys:
-        [NSNumber numberWithDouble:[[NSDate date] timeIntervalSince1970]], @"timestamp",
+    NSMutableDictionary *theFullMessage = [NSMutableDictionary dictionaryWithObjectsAndKeys:
+        [NSDate date], @"timestamp",
         self.session, @"session",
-        inMessage, @"message",
+        @"event", @"type",
         NULL];
+
+    [theFullMessage addEntriesFromDictionary:inEvent];
+
+    [self.messenger sendDocument:theFullMessage];
+    }
+
+- (void)startEvent:(NSDictionary *)inEvent
+    {
+    NSMutableDictionary *theFullMessage = [NSMutableDictionary dictionaryWithObjectsAndKeys:
+        [NSDate date], @"timestamp",
+        self.session, @"session",
+        @"start_event", @"type",
+        NULL];
+
+    [theFullMessage addEntriesFromDictionary:inEvent];
+
+    [self.messenger sendDocument:theFullMessage];
+    }
     
-    NSError *theError = NULL;
-    NSMutableData *theData = [[[self.serializer serializeDictionary:theFullMessage error:&theError] mutableCopy] autorelease];
-    [theData appendBytes:",\n" length:2];
-    [self.outgoingDataManager writeData:theData];
+- (void)endEvent:(NSDictionary *)inEvent
+    {
+    NSMutableDictionary *theFullMessage = [NSMutableDictionary dictionaryWithObjectsAndKeys:
+        [NSDate date], @"timestamp",
+        self.session, @"session",
+        @"end_event", @"type",
+        NULL];
+
+    [theFullMessage addEntriesFromDictionary:inEvent];
+
+    [self.messenger sendDocument:theFullMessage];
     }
 
 - (void)synchronize
     {
-    }
-
-- (void)processMessages
-    {
-    NSLog(@"Process Messages");
-    
-    NSData *theHeaderData = [@"[" dataUsingEncoding:NSUTF8StringEncoding];
-    NSData *theFooterData = [@"]" dataUsingEncoding:NSUTF8StringEncoding];
-    
-    id theBlock = ^(NSURL *inURL, BOOL *outStop)
-        {
-        NSError *theError = NULL;
-        
-        NSMutableData *theData = [NSMutableData data];
-        
-        [theData appendData:theHeaderData];
-        NSData *theMessageData = [NSData dataWithContentsOfURL:inURL options:NSDataReadingMapped error:&theError];
-        [theData appendData:theMessageData];
-        [theData appendData:theFooterData];
-        
-        [self.messenger sendBatchData:theData];
-        
-        return(YES);
-        };
-    
-    [self.outgoingDataManager processFilesUsingBlock:theBlock];
-    }
-
-#pragma mark -
-
-- (void)timerFire:(id)inParameter
-    {
-    [self processMessages];
+    [self.messenger synchronize];
     }
 
 @end

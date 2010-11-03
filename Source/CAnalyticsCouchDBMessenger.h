@@ -12,19 +12,27 @@
 @class CAnalyticsManager;
 @class CCouchDBServer;
 @class CCouchDBDatabase;
+@class CJSONSerializer;
+@class COutgoingDataManager;
 @class CPersistentOperationQueue;
 
 @interface CAnalyticsCouchDBMessenger : NSObject {
     CAnalyticsManager *analyticsManager;
+    CPersistentOperationQueue *operationQueue;
     CCouchDBSession *session;
     CCouchDBServer *server;
     CCouchDBDatabase *database;
-    CPersistentOperationQueue *persistentRequestManager;
+    CJSONSerializer *serializer;
+    COutgoingDataManager *outgoingDataManager;
+    NSTimer *timer;
 }
 
 - (id)initWithAnalyticsManager:(CAnalyticsManager *)inAnalyticsManager;
 
 - (void)sendDocument:(NSDictionary *)inDocument;
-- (void)sendBatchData:(NSData *)inData;
+
+- (void)process;
+
+- (void)synchronize;
 
 @end

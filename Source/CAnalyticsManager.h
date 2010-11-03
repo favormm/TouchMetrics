@@ -32,18 +32,17 @@
 @class CJSONSerializer;
 
 @interface CAnalyticsManager : NSObject {
-    NSOperationQueue *operationQueue;
-    NSTimer *timer;
-    CJSONSerializer *serializer;
     id session;
 }
 
-@property (readwrite, nonatomic, retain) CJSONSerializer *serializer;
 @property (readwrite, nonatomic, retain) id session;
 
 + (CAnalyticsManager *)sharedInstance;
 
-- (void)postMessage:(NSDictionary *)inMessage;
+- (void)postEvent:(NSDictionary *)inEvent;
+- (void)startEvent:(NSDictionary *)inEvent;
+- (void)endEvent:(NSDictionary *)inEvent;
+
 
 - (void)synchronize;
 
