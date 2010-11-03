@@ -36,12 +36,14 @@
 
 @implementation CPersistentOperationQueue
 
+@synthesize name;
 @synthesize delegate;
 
-- (id)init
+- (id)initWithName:(NSString *)inName;
     {
     if ((self = [super init]) != NULL)
         {
+        name = [inName retain];
     //    [self setSuspended:YES];
         [self unhibernate];
         }
@@ -76,7 +78,7 @@
 - (NSString *)hibernationPath
     {
     NSString *thePath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) lastObject];
-    thePath = [thePath stringByAppendingPathComponent:@"PersistentOperations"];
+    thePath = [thePath stringByAppendingPathComponent:self.name];
     NSError *theError = NULL;
     if ([[NSFileManager defaultManager] createDirectoryAtPath:thePath withIntermediateDirectories:YES attributes:NULL error:&theError] == NO)
         {

@@ -32,10 +32,14 @@
 @protocol CPersistentOperationQueueDelegate;
 
 @interface CPersistentOperationQueue : NSOperationQueue {
+    NSString *name;
     id <CPersistentOperationQueueDelegate> delegate;
 }
 
+@property (readonly, nonatomic, retain) NSString *name;
 @property (readwrite, nonatomic, assign) id <CPersistentOperationQueueDelegate> delegate;
+
+- (id)initWithName:(NSString *)inName;
 
 - (void)hibernate;
 - (void)unhibernate;
