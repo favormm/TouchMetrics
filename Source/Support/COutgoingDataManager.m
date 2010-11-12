@@ -145,9 +145,6 @@
     
 - (void)processFilesUsingBlock:(BOOL (^)(NSURL *inURL, BOOL *outStop))inBlock;
     {
-//    ^(NSURL *url, NSError *error) { NSLog(@"%@", error); return(NO); }
-    
-    NSLog(@"%@", self.directoryURL);
 //    NSFileManager *theFileManager = [[NSFileManager alloc] init];
 //    NSDirectoryEnumerator *theEnumerator = [theFileManager enumeratorAtURL:self.directoryURL includingPropertiesForKeys:NULL options:NSDirectoryEnumerationSkipsSubdirectoryDescendants | NSDirectoryEnumerationSkipsPackageDescendants | NSDirectoryEnumerationSkipsHiddenFiles errorHandler:NULL];
 

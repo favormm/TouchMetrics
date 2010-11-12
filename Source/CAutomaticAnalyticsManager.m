@@ -50,14 +50,11 @@ static IMP gOldViewWillDisappearImp = NULL;
 	[[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationWillTerminateNotification object:NULL queue:NULL usingBlock:theBlock];
 
 	id theLaunchBlock = ^(NSNotification *arg1) {
-		NSLog(@"%@", arg1.userInfo);
-	
 		NSMutableDictionary *theDictionary = [NSMutableDictionary dictionary];
-		
-		LogDebug_(@"Launch info: %@", [arg1.userInfo description]);
 		
 		if (arg1.userInfo)
 			{
+			LogDebug_(@"Launch info: %@", [arg1.userInfo description]);
 			[theDictionary setObject:arg1.userInfo forKey:@"Launch.userInfo"];
 			}
 		
@@ -91,10 +88,7 @@ static IMP gOldViewWillDisappearImp = NULL;
 		[theDictionary setObject:[NSNumber numberWithInt:theDevice.orientation] forKey:@"UIDevice.orientation"];
 //		[theDictionary setObject:theDevice.obfuscatedDeviceIdentifier forKey:@"UIDevice.obfuscatedDeviceIdentifier"];
 
-		NSLog(@"%@", theDictionary);
-		
 		[[CAutomaticAnalyticsManager sharedInstance] postEvent:theDictionary];
-		
 		};
 
 	[[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidFinishLaunchingNotification object:NULL queue:NULL usingBlock:theLaunchBlock];
