@@ -39,13 +39,18 @@
 @synthesize name;
 @synthesize delegate;
 
-- (id)initWithName:(NSString *)inName;
+- (id)initWithName:(NSString *)inName
     {
     if ((self = [super init]) != NULL)
         {
         name = [inName retain];
     //    [self setSuspended:YES];
         [self unhibernate];
+		
+		id theBlock = ^(NSNotification *arg1) {
+			[self hibernate];
+			};
+		[[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationWillTerminateNotification object:[UIApplication sharedApplication] queue:NULL usingBlock:theBlock];
         }
     return(self);
     }
