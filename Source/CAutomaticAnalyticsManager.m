@@ -54,7 +54,6 @@ static IMP gOldViewWillDisappearImp = NULL;
 		
 		if (arg1.userInfo)
 			{
-			LogDebug_(@"Launch info: %@", [arg1.userInfo description]);
 			[theDictionary setObject:arg1.userInfo forKey:@"Launch.userInfo"];
 			}
 		
