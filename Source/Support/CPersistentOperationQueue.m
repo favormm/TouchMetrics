@@ -38,6 +38,7 @@
 
 @synthesize name;
 @synthesize delegate;
+@synthesize unhibernateBlock;
 
 - (id)initWithName:(NSString *)inName
     {
@@ -58,6 +59,9 @@
 - (void)dealloc
     {
     [self hibernate];
+
+	[unhibernateBlock release];
+	unhibernateBlock = NULL;
 
     delegate = NULL;
     //
@@ -144,6 +148,11 @@
             [self.delegate persistentOperationQueue:self didUnhibernateOperation:theOperation];
             }
     //    theOperation.completionBlock = ^(void) { NSLog(@"HIBERNATED DONE"); };
+	
+		if (self.unhibernateBlock)
+			{
+			self.unhibernateBlock(theOperation);
+			}
 
         [self addOperation:theOperation];
         

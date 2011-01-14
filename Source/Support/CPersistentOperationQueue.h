@@ -38,6 +38,7 @@
 
 @property (readonly, nonatomic, retain) NSString *name;
 @property (readwrite, nonatomic, assign) id <CPersistentOperationQueueDelegate> delegate;
+@property (readwrite, nonatomic, copy) void (^unhibernateBlock)(NSOperation *);
 
 - (id)initWithName:(NSString *)inName;
 
